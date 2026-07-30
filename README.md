@@ -38,8 +38,13 @@ export GROQ_API_KEY=your_key  # (or use the .env value)
 python app.py                 # serves on http://localhost:5000
 ```
 
-**Frontend:** open `frontend/index.html` in your browser (or serve it with
-`python -m http.server` from the `frontend/` folder).
+**Frontend:** serve it over http from the `frontend/` folder:
+```bash
+cd frontend && python -m http.server 8000   # then open http://localhost:8000
+```
+The backend's CORS policy allows `localhost`/`127.0.0.1` by default, so serving over http
+just works. Opening `index.html` directly as a `file://` page is blocked by that policy —
+set `ALLOWED_ORIGINS=null` in `.env` if you really want to.
 
 `/run` works immediately; the Explain/Debug buttons light up once a `GROQ_API_KEY` is set.
 
@@ -49,6 +54,13 @@ python app.py                 # serves on http://localhost:5000
 timeout. That's fine for a local playground, but a public deployment would need real
 sandboxing (Docker/nsjail/firecracker). This is a learning project, not a production
 service — the limitation is intentional and called out rather than hidden.
+
+Hardening that *is* in place:
+- The runner's subprocess gets a **secret-stripped environment**, so a snippet can't read
+  the server's `GROQ_API_KEY` (or any `*_KEY` / `*_TOKEN` / `*_SECRET` var).
+- Each run executes in a **throwaway temp directory** used as its working directory.
+- **CORS is restricted** to `localhost`/`127.0.0.1` by default (configurable) instead of `*`.
+- Request bodies are capped at **100 KB**, and the server binds to `localhost` with `debug` off.
 
 ## Tech
 
